@@ -6,6 +6,7 @@ const PopupMenu = imports.ui.popupMenu;
 const Gtk = imports.gi.Gtk;
 const Gio = imports.gi.Gio;
 const Util = imports.misc.util;
+const Main = imports.ui.main;
 
 const MENU_SCHEMAS = "org.cinnamon.applets.classicMenu";
 let menuSettings = new Gio.Settings({schema: MENU_SCHEMAS});
@@ -25,7 +26,7 @@ MyApplet.prototype = {
 
     _init: function(orientation) {        
         Applet.TextIconApplet.prototype._init.call(this, orientation);
-        
+
         try {
             this.right_app = true;
             this.set_applet_tooltip(_("Menu"));
@@ -41,7 +42,7 @@ MyApplet.prototype = {
             }));
 
             this.actor.connect('key-press-event', Lang.bind(this, this._onSourceKeyPress));
-                        
+
             this.menu.actor.add_style_class_name('menu-background');
             this.menu.connect('open-state-changed', Lang.bind(this, this._onOpenStateChanged));
 
@@ -50,7 +51,7 @@ MyApplet.prototype = {
             global.settings.connect("changed::menu-icon", Lang.bind(this, function() {
                 this._updateIcon();
             })); 
-            
+
             this.set_applet_label(_("Menu"));
 
             let menuLabel = global.settings.get_string("menu-text");
@@ -81,22 +82,22 @@ MyApplet.prototype = {
             global.logError(e);
         }
     },
-    
+
     on_orientation_changed: function (orientation) {
         this.menu.destroy();
         this.menu = new Applet.AppletPopupMenu(this, orientation);
         this.menuManager.addMenu(this.menu);
-        
+
         this.menu.actor.add_style_class_name('menu-background');
         this.menu.connect('open-state-changed', Lang.bind(this, this._onOpenStateChanged));
-        
+
         this._display();
     },
-    
+
     _launch_editor: function() {
         Util.spawnCommandLine("cinnamon-menu-editor");
     },
-    
+
     on_applet_clicked: function(event) {
         this.menu.toggle();     
     },
@@ -120,11 +121,14 @@ MyApplet.prototype = {
     },
 
     _onOpenStateChanged: function(menu, open) {
-        if (open)
-            this.actor.add_style_pseudo_class('active');            
-        else
+        if (open){
+            this.actor.add_style_pseudo_class('active');
+//temporarily change source actor to Main.uiGroup to "trick" the menu manager to think that right click submenus are part of it
+	    this.menu.sourceActor = Main.uiGroup;
+        } else {
             this.actor.remove_style_pseudo_class('active');
-
+	    this.menu.sourceActor = this.actor;
+	}
         if (this.right_app)
             this.applicationsBox._onOpenStateChanged(menu, open);
         else
@@ -137,7 +141,7 @@ MyApplet.prototype = {
         this.actor.destroy();
         this.emit('destroy');
     },
-    
+
     _updateIcon: function(){
         let icon_file = global.settings.get_string("menu-icon");
         try{
@@ -150,7 +154,7 @@ MyApplet.prototype = {
     _onMenuKeyPress: function(actor, event) {
 
         let symbol = event.get_key_symbol();
-        
+
         if (symbol==Clutter.KEY_Super_L && this.menu.isOpen) {
             this.menu.close();
             return true;
@@ -169,10 +173,10 @@ MyApplet.prototype = {
             this._selectedItemIndex = -1;
             this._previousSelectedItemIndex = -1;
         }
-        
-        
+
+
         let children = this._activeContainer.get_children();
-        
+
         if (children.length==0){
             this._activeContainer = this.categoriesBox;
             this._selectedItemIndex = -1;
@@ -211,7 +215,7 @@ MyApplet.prototype = {
         if (index == this._selectedItemIndex) {
             return true;
         }
-        
+
         if (this._activeContainer==this.applicationsBox){
             if (index>=children.length-1) index = children.length-2;
         }else{
@@ -257,6 +261,13 @@ r
 
         let leftPane = new St.BoxLayout({ vertical: true });
 
+	let dummy = new St.Bin({ style_class: 'popup-separator-menu-item' });
+	Main.uiGroup.add_actor(dummy);
+	let separatorThemeNode = dummy.get_theme_node(); //Need to find a smarter way of doing this.
+	let separatorColor = separatorThemeNode.get_color('-gradient-start');
+	Main.uiGroup.remove_actor(dummy);
+	leftPane.style = "border: 2px solid " + separatorColor + "; border-top: 0px; border-bottom: 0px; border-left: 0px;";
+	
         this.leftBox = new St.BoxLayout({ vertical: true, style_class: 'left-box'});
         this.placesBox = new LeftPanel.PlacesBox(this.menu);
 
@@ -270,7 +281,7 @@ r
         leftPane.add_actor(this.leftBox);
 
         let rightPane = new St.BoxLayout({ vertical: true });
- 
+
         this.changeBin = new St.Bin({reactive: true});
         this.changeBox = new St.BoxLayout();
         this.changeIcon = new St.Icon({icon_name: "go-next", icon_type: St.IconType.SYMBOLIC, icon_size: 12});
@@ -305,7 +316,7 @@ r
                 this._changeRight();
             }
         }));
-  
+
         section.actor.add_actor(this.mainBox);
         this._changeRight();
     },

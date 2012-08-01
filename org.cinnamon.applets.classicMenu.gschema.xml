@@ -30,7 +30,7 @@
       <summary>Desktop file of package manager</summary>
     </key>
     <key type="s" name="favorites-list">
-      <default>"firefox.desktop:thunderbird.desktop:pidgin.desktop:banshee.desktop::gcalctool.desktop:gedit.desktop:gnome-terminal.desktop:gnome-sound-panel.desktop::gnome-display-panel.desktop:gnome-system-monitor.desktop"</default>
+      <default>"firefox.desktop:mintInstall.desktop:cinnamon-settings.desktop:xchat.desktop:gnome-terminal.desktop:nautilus.desktop"<default>
     </key>
   </schema>
 </schemalist>

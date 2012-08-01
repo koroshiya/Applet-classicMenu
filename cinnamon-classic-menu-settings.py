@@ -32,7 +32,7 @@ class GSettingsSpinButton(Gtk.HBox):
         
         self.content_widget.set_range(min, max)
         self.content_widget.set_increments(step, page)
-        self.content_widget.set_editable(False)
+        self.content_widget.set_editable(True)
         
         self.settings = Gio.Settings.new(schema)        
         self.content_widget.set_value(self.settings.get_int(self.key))

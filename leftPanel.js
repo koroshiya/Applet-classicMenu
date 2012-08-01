@@ -1,17 +1,22 @@
-const Lang = imports.lang;
-const St = imports.gi.St;
-const Clutter = imports.gi.Clutter;
+// -*- indent-tabs-mode: nil -*-
 const PopupMenu = imports.ui.popupMenu;
-const Gio = imports.gi.Gio;
+const DND = imports.ui.dnd;
+const ModalDialog = imports.ui.modalDialog;
+const Main = imports.ui.main;
+
 const GnomeSession = imports.misc.gnomeSession;
 const ScreenSaver = imports.misc.screenSaver;
 const Util = imports.misc.util;
-const DND = imports.ui.dnd;
-const ModalDialog = imports.ui.modalDialog;
-const Mainloop = imports.mainloop;
-const MENU_SCHEMAS = "org.cinnamon.applets.classicMenu";
-const Cinnamon = imports.gi.Cinnamon;
 
+const Lang = imports.lang;
+const Mainloop = imports.mainloop;
+
+const Gio = imports.gi.Gio;
+const Cinnamon = imports.gi.Cinnamon;
+const St = imports.gi.St;
+const Clutter = imports.gi.Clutter;
+
+const MENU_SCHEMAS = "org.cinnamon.applets.classicMenu";
 let menuSettings = new Gio.Settings({schema: MENU_SCHEMAS});
 let appSys = Cinnamon.AppSystem.get_default();
 
@@ -137,7 +142,7 @@ AddPlacesDialog.prototype = {
 
         menuSettings.set_strv("places-list", strings);
     },
-    
+
     open: function(timestamp){
         if (this.string){
             let props = this.string.split("::");
@@ -182,17 +187,14 @@ function LeftBoxItem(label, icon, func, parent){
 }
 
 LeftBoxItem.prototype = {
-    __proto__: PopupMenu.PopupSubMenuMenuItem.prototype,
+    __proto__: PopupMenu.PopupBaseMenuItem.prototype,
 
     _init: function(label, icon, func, parent){
-        PopupMenu.PopupSubMenuMenuItem.prototype._init.call(this, label);
+        PopupMenu.PopupBaseMenuItem.prototype._init.call(this);
 
         this.actor.set_style_class_name('menu-category-button');
 	this.parent = parent;
         this.func = func;
-        this.removeActor(this.label);
-        this.removeActor(this._triangle);
-        this._triangle = new St.Label();
 	this.label = new St.Label({text: " " + label});
 	this.icon = new St.Icon({style_class: 'popup-menu-icon', icon_type: St.IconType.FULLCOLOR, icon_name: icon, icon_size: LEFT_ICON_SIZE });
 	this.addActor(this.icon);
@@ -230,27 +232,38 @@ PlacesMenuItem.prototype = {
 
         this.string = string;
 
-        this.menu = new PopupMenu.PopupSubMenu(this.actor, this._triangle);
-        this.menu.actor.remove_style_class_name("popup-sub-menu");
-        this.menu.addAction(_("Remove"), Lang.bind(this, this.remove));
-        this.menu.addAction(_("Edit Place"), Lang.bind(this, function(event){
+        this._menu = new PopupMenu.PopupMenu(this.actor, 0.0, St.Side.BOTTOM, 0);
+        this._menu.blockSourceEvents = true;
+        this._menu._source = this;
+        Main.uiGroup.add_actor(this._menu.actor);
+        this._menu.actor.hide();
+
+        this._menuManager = new PopupMenu.PopupMenuManager(this);
+        this._menuManager.addMenu(this._menu);
+
+        this._menu.addAction(_("Remove"), Lang.bind(this, this.remove));
+        this._menu.addAction(_("Edit Place"), Lang.bind(this, function(event){
             let dialog = new AddPlacesDialog(menuSettings.get_strv("places-list").indexOf(this.string), this.string);
             dialog.open(event.get_time());
         }));
-        this.menu.addAction(_("New Place"), Lang.bind(this, function(event){
-            let dialog = new AddPlacesDialog(menuSettings.get_strv("places-list").indexOf(this.string), null);
+
+        this._menu.addAction(_("New Place"), Lang.bind(this, function(event){
+            let dialog = new AddPlacesDialog(menuSettings.get_strv("places-list").indexOf(this.string), "::folder::");
             dialog.open(event.get_time());
         }));
-
+        this._menu.close();
         this._draggable = DND.makeDraggable(this.actor);
     },
 
     _onButtonReleaseEvent: function(actor, event){
         if (event.get_button()==1){
-            this.activate(event);
+            if (this._menu.isOpen)
+                this._menu.toggle();
+            else
+                this.activate(event);
         }
         if (event.get_button() == 3){
-            this.menu.toggle();
+            this._menu.toggle();
         }
     },
 
@@ -271,7 +284,7 @@ PlacesMenuItem.prototype = {
 
     getDragActorSource: function() {
         return this.actor;
-    }
+    },
 }
 
 function PlacesBox(menu){
@@ -311,7 +324,6 @@ PlacesBox.prototype = {
             let item = new PlacesMenuItem(_(prop[0]), prop[1], "Util.spawnCommandLine('nautilus " + prop[2] + "')", this.menu, this.buttonList[i]);
             let buttonBox = new St.BoxLayout({vertical: true});
             buttonBox.add_actor(item.actor);
-            buttonBox.add_actor(item.menu.actor);
             buttonBox.item = item;
             this.buttons.add_actor(buttonBox);
         }
@@ -369,7 +381,6 @@ PlacesBox.prototype = {
 
         this.buttonList.splice(this._dragPlaceholderPos, 0, source.actor._delegate.string);
         this.buttonList.splice(removePos, 1);
-        global.log(this.buttonList);
         this._clearDragPlaceholder();
         actor.destroy();
 

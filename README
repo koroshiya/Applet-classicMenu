@@ -1,6 +1,10 @@
 This is a Cinnamon applet designed to look like the mintMenu.
 
 Change log:
+2.6.9
+Removed "uninstall application"
+Added GUI favorites editing
+
 2.6
 Allowed user-defined package manager (Synaptic by default)
 Allowed custom favorites list with separators
