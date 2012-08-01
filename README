@@ -1,0 +1,27 @@
+This is a Cinnamon applet designed to look like the mintMenu.
+
+Change log:
+2.5
+Allowed GUI editing of places
+Searches web when there is no search result
+
+2.4
+Allowed different sizes for different icons
+
+2.3
+Allowed changing places
+
+2.2
+Added Settings Editor
+
+2.1
+Allowed changing icon size
+
+2.0
+Added favorites panel
+
+1.1
+Added "Terminal" button in left panel
+
+1.0
+Initial release
