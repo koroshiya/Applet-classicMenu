@@ -2,5 +2,7 @@
  "uuid": "classicMenu@dalcde",
  "name": "Classic Menu",
  "description": "Main Menu that resembles mintMenu",
- "icon": "applications-other"
+ "icon": "applications-other",
+ "menu-text": "Menu",
+ "menu-icon": "/usr/share/cinnamon/theme/menu.png"
 }

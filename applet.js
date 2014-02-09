@@ -54,12 +54,13 @@ MyApplet.prototype = {
 
             this.set_applet_label(_("Menu"));
 
-            let menuLabel = global.settings.get_string("menu-text");
-            if (menuLabel != "Menu") {
+            //let menuLabel = global.settings.get_string("menu-text");
+            let menuLabel = "Menu";
+            /*if (menuLabel != "Menu") {
                 this.set_applet_label(menuLabel);
-            }
+            }*/
             global.settings.connect("changed::menu-text", Lang.bind(this, function() {
-                this.set_applet_label(global.settings.get_string("menu-text"));
+                this.set_applet_label("Menu");
             }));
 
             this._display();
@@ -143,7 +144,7 @@ MyApplet.prototype = {
     },
 
     _updateIcon: function(){
-        let icon_file = global.settings.get_string("menu-icon");
+	let icon_file = "/usr/share/cinnamon/theme/menu.png";
         try{
            this.set_applet_icon_path(icon_file);
         }catch(e){
